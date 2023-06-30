@@ -1,0 +1,169 @@
+{
+    "area": 
+    {
+        "ID": {
+            "bd_column_name": "id_area",
+            "type": "int64",
+            "PK": 1,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 1
+        },
+        "Nombre": {
+            "bd_column_name": "area",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 1
+        },
+        "Tipo": {
+            "bd_column_name": "tipo",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 0
+        }, 	
+        "Jefatura": {
+            "bd_column_name": "jefatura",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        }, 
+        "Objetivo": {
+            "bd_column_name": "objetivo",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        }, 
+        "Descripcion": {
+            "bd_column_name": "descripcion",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        }
+    },
+
+    "colaboradores_agencia": 
+    {
+        "Rut": {
+            "bd_column_name": "rut_colaborador",
+            "type": "str",
+            "PK": 1,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 1
+        },
+        "Nombres": {
+            "bd_column_name": "nombre",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 0
+        },
+        "Apellido Paterno": {
+            "bd_column_name": "apellido_paterno",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 1,
+            "UQ": 0
+        },
+        "Apellido Materno": {
+            "bd_column_name": "apellido_materno",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Cargo": {
+            "bd_column_name": "cargo",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Area": {
+            "bd_column_name": "id_area",
+            "type": "int64",
+            "PK": 0,
+            "FK": 1,
+            "NN": 1,
+            "UQ": 0
+        },
+        "Género": {
+            "bd_column_name": "genero",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Pueblo Originario": {
+            "bd_column_name": "pueblo_originario",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Estado": {
+            "bd_column_name": "estado",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Fecha Ingreso": {
+            "bd_column_name": "f_ingreso",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        },
+        "Fecha Egreso": {
+            "bd_column_name": "f_egreso",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+        }
+    },
+
+    "programas": 
+    {
+        "1": {
+            "bd_column_name": "1",
+            "type": "int64",
+            "PK": 1,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+
+        },
+        "2": {
+            "bd_column_name": "2",
+            "type": "str",
+            "PK": 0,
+            "FK": 0,
+            "NN": 0,
+            "UQ": 0
+
+        }
+    }
+    
+    
+}

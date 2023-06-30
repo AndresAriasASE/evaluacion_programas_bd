@@ -1,0 +1,6 @@
+{
+    "host_name" :"pruebas-evprog.crgmojjip3mm.us-east-2.rds.amazonaws.com",
+    "user_name": "admin",
+    "user_password": "pruebasev",
+    "db_name": "piloto_v1"
+}

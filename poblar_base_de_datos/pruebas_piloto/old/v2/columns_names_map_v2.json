@@ -1,0 +1,224 @@
+{
+    "area": [
+        {
+            "Field": "id_area",
+            "Type": "int",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "ID"
+        },
+        {
+            "Field": "area",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Nombre"
+        },
+        {
+            "Field": "tipo",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Tipo"
+        },
+        {
+            "Field": "jefatura",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Jefatura"
+        },
+        {
+            "Field": "objetivo",
+            "Type": "mediumtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Objetivo"
+        },
+        {
+            "Field": "descripcion",
+            "Type": "mediumtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Descripcion"
+        }
+    ],
+    "colaboradores_agencia": [
+        {
+            "Field": "rut_colaborador",
+            "Type": "varchar(12)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Rut"
+        },
+        {
+            "Field": "nombre",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Nombres"
+        },
+        {
+            "Field": "apellido_paterno",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Apellido Paterno"
+        },
+        {
+            "Field": "apellido_materno",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Apellido Materno"
+        },
+        {
+            "Field": "cargo",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Cargo"
+        },
+        {
+            "Field": "id_area",
+            "Type": "int",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Area"
+        },
+        {
+            "Field": "genero",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Género"
+        },
+        {
+            "Field": "pueblo_originario",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Pueblo Originario"
+        },
+        {
+            "Field": "estado",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Estado"
+        },
+        {
+            "Field": "f_ingreso",
+            "Type": "date",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Fecha Ingreso"
+        },
+        {
+            "Field": "f_retiro",
+            "Type": "date",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": "Fecha Retiro"
+        }
+    ],
+    "programa": [
+        {
+            "Field": "id_programa",
+            "Type": "varchar(20)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "nombre",
+            "Type": "varchar(100)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "programa_publico",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "componente_paee",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "jefatura",
+            "Type": "varchar(1000)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "id_area",
+            "Type": "int",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        },
+        {
+            "Field": "anho",
+            "Type": "year",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": "",
+            "Excel_Column": ""
+        }
+    ]
+}
