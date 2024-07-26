@@ -1,0 +1,1157 @@
+// Función para cambiar el formato de fecha en toda la hoja
+function cambiarFormatoFechas(sheet) {
+  var ultimaFila = sheet.getLastRow();
+  var ultimaColumna = sheet.getLastColumn();
+  var rango = sheet.getRange(1, 1, ultimaFila, ultimaColumna);
+  var formatosActuales = rango.getNumberFormats();
+  
+  for (var i = 0; i < formatosActuales.length; i++) {
+    for (var j = 0; j < formatosActuales[i].length; j++) {
+      if (formatosActuales[i][j].indexOf('date') !== -1) {
+        // Cambiar el formato a 'DD/MM/AAAA'
+        formatosActuales[i][j] = 'dd/mm/yyyy';
+      }
+    }
+  }
+  
+  // Establecer los nuevos formatos
+  rango.setNumberFormats(formatosActuales);
+}
+
+// Función principal onEdit
+function onEdit(e) {
+  try {
+    // Verificar si el objeto de evento es válido
+    if (e && e.source && e.range) {
+      // Obtener la hoja de cálculo activa
+      var spreadsheet = e.source;
+
+      // Obtener la hoja activa
+      var sheet = e.range.getSheet();
+
+      Logger.log('Evento de edición detectado. Detalles:');
+      Logger.log('ID de la hoja de cálculo (Spreadsheet): ' + spreadsheet.getId());
+      Logger.log('Nombre de la hoja de cálculo (Spreadsheet): ' + spreadsheet.getName());
+      Logger.log('Nombre de la hoja (Sheet): ' + sheet.getName());
+      Logger.log('Fila editada: ' + e.range.getRow());
+
+      // Cambiar el formato de fecha en toda la hoja
+      cambiarFormatoFechas(sheet);
+
+      // Aquí puedes agregar la lógica para generar o actualizar un PDF
+      var pdfUrl = generarPDF(sheet, e.range.getRow());
+
+      if (pdfUrl) {
+        Logger.log('PDF generado y guardado en: ' + pdfUrl);
+      } else {
+        Logger.log('Error al generar o actualizar el PDF.');
+      }
+    } else {
+      Logger.log('El objeto de evento no es válido. Detalles del evento:');
+      Logger.log(e);
+    }
+  } catch (error) {
+    Logger.log('Error en onEdit: ' + error);
+  }
+}
+
+// Función para generar una tabla con dos columnas
+function generarTablaDosColumnas(valoresFila4, valores) {
+  var tablaHTML = '<table>';
+  for (var i = 0; i < valoresFila4.length; i++) {
+    tablaHTML += '<tr>';
+    tablaHTML += '<td style="max-width: 200px;">' + valoresFila4[i] + '</td>';
+    
+    if (i < valores.length) {
+      tablaHTML += '<td style="max-width: 200px;">' + valores[i] + '</td>';
+    } else {
+      tablaHTML += '<td style="max-width: 200px;"></td>';
+    }
+    
+    tablaHTML += '</tr>';
+  }
+  tablaHTML += '</table>';
+  return tablaHTML;
+}
+
+// Función para formatear la fecha en formato dd/mm/aaaa
+function formatearFecha(fecha) {
+  if (fecha instanceof Date) {
+    var dd = fecha.getDate();
+    var mm = fecha.getMonth() + 1; // El mes es indexado desde 0
+    var yyyy = fecha.getFullYear();
+
+    // Agregar ceros iniciales si es necesario
+    if (dd < 10) {
+      dd = '0' + dd;
+    }
+    if (mm < 10) {
+      mm = '0' + mm;
+    }
+
+    return dd + '/' + mm + '/' + yyyy;
+  } else {
+    return '';
+  }
+}
+// Función para generar o actualizar PDF desde la fila actual
+
+
+function generarPDF(sheet, fila) {
+  try {
+    // Obtener el valor de la celda en la columna AV (para decidir qué tablas incluir)
+    var valorCeldaQ = sheet.getRange(fila, 48).getValue();
+
+    // Verificar si el valor de la celda en la columna Q es mayor que 1
+    //var incluirTabla1y2 = valorCeldaQ <= 1;
+    var incluirTabla1y2 = valorCeldaQ !='';
+
+    // Reemplazar caracteres no permitidos en un nombre de archivo
+    var nombreIniciativa = sheet.getRange(fila, 50).getValue().replace(/[\/\\?%*:|"<>.]/g, '_');
+    var nombreArchivo = 'Ficha_de_Iniciativa_' + nombreIniciativa + '.pdf';
+
+    // Crear el contenido del HTML con los datos de la fila
+    var contenidoHTML = '<html><head><style>body {text-align: center;}</style></head><body>';
+
+    // Resto del código para la primera tabla solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+     contenidoHTML += '<h1 style="font-size: 18px; margin-bottom: 25px;">Ficha de Iniciativa: ' + sheet.getRange(fila, 4).getValue() + '</h1>';
+     contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px; margin-bottom: 20px;">1. Ficha de Iniciativa: Datos Generales'+ '</h1>';
+      
+/// Primer bloque de tabla
+contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+var ultimaColumna = sheet.getLastColumn();
+var valoresFila = sheet.getRange(fila, 4, 1, 4).getValues()[0];
+var valoresFila4 = sheet.getRange(4, 4, 1, 4).getValues()[0];
+for (var i = 0; i < 4; i++) {
+  contenidoHTML += '<tr>';
+  contenidoHTML += '<td style="max-width: 200px; table-layout: auto; text-align: justify; font-size: 12px; border: 1px solid black; padding: 8px;"><strong>' + (i < valoresFila4.length ? valoresFila4[i] : '') + '</strong></td>';
+
+  contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;">';
+
+  // Agregar la verificación si el valor es una fecha antes de formatear
+  if (valoresFila[i] instanceof Date) {
+    contenidoHTML += formatearFecha(valoresFila[i]);
+  } else {
+    contenidoHTML += valoresFila[i];
+  }
+
+  contenidoHTML += '</td>';
+  contenidoHTML += '</tr>';
+}
+contenidoHTML += '</table>';
+
+    }
+
+     // Añadir salto de página antes de la segunda tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+      contenidoHTML += '<div style="page-break-before: always;"></div>';
+    }
+
+    // Resto del código para la segunda tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">2. Ficha de Iniciativa: Problemática'+ '</h1>';
+  contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+  var valoresFila4Tabla2 = sheet.getRange(4, 7, 1, 3).getValues()[0];
+  var valoresTabla2 = sheet.getRange(fila, 7, 1, 3).getValues()[0];
+  for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+    if (valoresTabla2[i] instanceof Date) {
+      contenidoHTML += formatearFecha(valoresTabla2[i]);
+    } else {
+      //Verificar si la columna es una de las columnas que contienen valores en pesos
+      contenidoHTML += valoresTabla2[i];
+    }
+
+    contenidoHTML += '</td>';
+    contenidoHTML += '</tr>';
+  }
+  contenidoHTML += '</table>';
+}
+
+   // Añadir salto de página antes de la tercera tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+      contenidoHTML += '<div style="page-break-before: always;"></div>';
+    }
+
+    // Resto del código para la tercera tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+  //contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">3. Ficha de Iniciativa: Riesgos'+ '</h1>';
+  //contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">3. Ficha de Iniciativa: Riesgos'+ '</h1>';
+  contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+  var valoresFila4Tabla2 = sheet.getRange(4, 10, 1, 2).getValues()[0];
+  var valoresTabla2 = sheet.getRange(fila, 10, 1, 2).getValues()[0];
+  for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+    if (valoresTabla2[i] instanceof Date) {
+      contenidoHTML += formatearFecha(valoresTabla2[i]);
+    } else {
+      //Verificar si la columna es una de las columnas que contienen valores en pesos
+      contenidoHTML += valoresTabla2[i];
+    }
+
+    contenidoHTML += '</td>';
+    contenidoHTML += '</tr>';
+  }
+  contenidoHTML += '</table>';
+}
+
+
+// tercera tabla formulario
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 12 no está vacío
+  if (sheet.getRange(fila, 12).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+    contenidoHTML += '<h1 style="font-size: 12px; text-align: left; margin-left: 45px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 11, 1, 2).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 11, 1, 2).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// tercera tabla formulario
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 13 no está vacío
+  if (sheet.getRange(fila, 13).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+    contenidoHTML += '<h1 style="font-size: 12px; text-align: left; margin-left: 45px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 12, 1, 2).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 12, 1, 2).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// tercera tabla formulario
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 14 no está vacío
+  if (sheet.getRange(fila, 14).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+    contenidoHTML += '<h1 style="font-size: 12px; text-align: left; margin-left: 45px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 13, 1, 2).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 13, 1, 2).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// tercera tabla formulario
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 15 no está vacío
+  if (sheet.getRange(fila, 15).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+    contenidoHTML += '<h1 style="font-size: 12px; text-align: left; margin-left: 45px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 14, 1, 2).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 14, 1, 2).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// tercera tabla formulario
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 16 no está vacío
+  if (sheet.getRange(fila, 16).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+    contenidoHTML += '<h1 style="font-size: 12px; text-align: left; margin-left: 45px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 15, 1, 2).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 15, 1, 2).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+   // Añadir salto de página antes de la cuarta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+      contenidoHTML += '<div style="page-break-before: always;"></div>';
+    }
+
+    // Resto del código para la cuarta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">4. Ficha de Iniciativa: Gobernanza'+ '</h1>';
+  contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+  var valoresFila4Tabla2 = sheet.getRange(4, 16, 1, 2).getValues()[0];
+  var valoresTabla2 = sheet.getRange(fila, 16, 1, 2).getValues()[0];
+  for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong>' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+    if (valoresTabla2[i] instanceof Date) {
+      contenidoHTML += formatearFecha(valoresTabla2[i]);
+    } else {
+      //Verificar si la columna es una de las columnas que contienen valores en pesos
+      contenidoHTML += valoresTabla2[i];
+    }
+
+    contenidoHTML += '</td>';
+    contenidoHTML += '</tr>';
+  }
+  contenidoHTML += '</table>';
+}
+
+   // Añadir salto de página antes de la cuarta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+      //contenidoHTML += '<div style="page-break-before: always;"></div>';
+    }
+
+    // Resto del código para la cuarta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">'+ '</h1>';
+  contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; margin: 0 auto; table-layout: auto;">';
+  var valoresFila4Tabla2 = sheet.getRange(4, 17, 1, 2).getValues()[0];
+  var valoresTabla2 = sheet.getRange(fila, 17, 1, 2).getValues()[0];
+  for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px;"><strong style="font-size: 12px;">' + valoresFila4Tabla2[i] + '</strong></td>';
+    contenidoHTML += '<td style="max-width: 200px; table-layout: auto; text-align: justify; font-size: 10px; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+    if (valoresTabla2[i] instanceof Date) {
+      contenidoHTML += formatearFecha(valoresTabla2[i]);
+    } else {
+      //Verificar si la columna es una de las columnas que contienen valores en pesos
+      contenidoHTML += valoresTabla2[i];
+    }
+
+    contenidoHTML += '</td>';
+    contenidoHTML += '</tr>';
+  }
+  contenidoHTML += '</table>';
+}
+
+  // Añadir salto de página antes de la quinta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+      contenidoHTML += '<div style="page-break-before: always;"></div>';
+    }
+
+    // Resto del código para la quinta tabla formulario solo si es necesario (incluirTabla1y2 es verdadero)
+    if (incluirTabla1y2) {
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">5. Ficha de Iniciativa: Transversalidad'+ '</h1>';
+  contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+  var valoresFila4Tabla2 = sheet.getRange(4, 18, 1, 4).getValues()[0];
+  var valoresTabla2 = sheet.getRange(fila, 18, 1, 4).getValues()[0];
+  for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+    if (valoresTabla2[i] instanceof Date) {
+      contenidoHTML += formatearFecha(valoresTabla2[i]);
+    } else {
+      //Verificar si la columna es una de las columnas que contienen valores en pesos
+      contenidoHTML += valoresTabla2[i];
+    }
+
+    contenidoHTML += '</td>';
+    contenidoHTML += '</tr>';
+  }
+  contenidoHTML += '</table>';
+}
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 22 no está vacío
+  if (sheet.getRange(fila, 22).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+   contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">6. Ficha de Iniciativa: Acuerdos'+ '</h1>';
+   contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 21, 1, 6).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 21, 1, 6).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+
+  else{
+
+  contenidoHTML += '<div style="page-break-before: always;"></div>';
+  contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">6. Ficha de Iniciativa: Acuerdos'+ '</h1>';
+  contenidoHTML += '<h1 style="font-size: 14px; text-align: left; margin-left: 45px;">Sin Acuerdos declarados'+ '</h1>';
+          }
+}
+
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 27 no está vacío
+  if (sheet.getRange(fila, 27).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+   contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">'+ '</h1>';
+   contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 26, 1, 6).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 26, 1, 6).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 32 no está vacío
+  if (sheet.getRange(fila, 32).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+   contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">'+ '</h1>';
+   contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 31, 1, 6).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 31, 1, 6).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 37 no está vacío
+  if (sheet.getRange(fila, 37).getValue() !== "") {
+    // Agregar salto de página antes de la quinta tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la quinta tabla formulario
+   contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">'+ '</h1>';
+   contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 36, 1, 6).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 36, 1, 6).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+    contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 42 no está vacío
+  if (sheet.getRange(fila, 42).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla formulario
+    //contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla formulario
+   contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">'+ '</h1>';
+   contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 41, 1, 6).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 41, 1, 6).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+    contenidoHTML += '<td style="max-width: 200px; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+ 
+//A CONTAR DE AHORA SE MONTA SEGUNDA PARTE "ANEXO 1"
+
+// segunda tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 48 no está vacío
+  if (sheet.getRange(fila, 48).getValue() !== "") {
+    // Agregar salto de página antes de la segunda tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la segunda tabla
+    contenidoHTML += '<h1 style="font-size: 18px;">Anexo A - Programación de Actividades del Convenio'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 49, 1, 9).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 49, 1, 9).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+
+// segunda tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 48 no está vacío
+  if (sheet.getRange(fila, 48).getValue() !== "") {
+    // Agregar salto de página antes de la segunda tabla
+   // contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la segunda tabla
+
+   
+    contenidoHTML += '<h1 style="font-size: 18px;">'+ '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 57, 1, 5).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 57, 1, 5).getValues()[0];
+    
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+    contenidoHTML += '<tr>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+    contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+    // Verificar si el valor es una fecha antes de formatear
+
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += '$'+ formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += '$' + valoresTabla2[i].toLocaleString();
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+
+// tercera tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 62 no está vacío
+  if (sheet.getRange(fila, 62).getValue() !== "") {
+    // Agregar salto de página antes de la tercera tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la tercera tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°1' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 61, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 61, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// cuarta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 72 no está vacío
+  if (sheet.getRange(fila, 72).getValue() !== "") {
+    // Agregar salto de página antes de la cuarta tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la cuarta tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°2' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 71, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 71, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// quinta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 82 no está vacío
+  if (sheet.getRange(fila, 82).getValue() !== "") {
+    // Agregar salto de página antes de la quinta tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la quinta tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°3' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 81, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 81, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// sexta tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 92 no está vacío
+  if (sheet.getRange(fila, 92).getValue() !== "") {
+    // Agregar salto de página antes de la sexta tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la sexta tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°4' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 91, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 91, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// septima tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 102 no está vacío
+  if (sheet.getRange(fila, 102).getValue() !== "") {
+    // Agregar salto de página antes de la septima tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la septima tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°5' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 101, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 101, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// octava tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 112 no está vacío
+  if (sheet.getRange(fila, 112).getValue() !== "") {
+    // Agregar salto de página antes de la octava tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la octava tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°6' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 111, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 111, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// novena tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 122 no está vacío
+  if (sheet.getRange(fila, 122).getValue() !== "") {
+    // Agregar salto de página antes de la novena tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la novena tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°7' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 121, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 121, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// decima tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 132 no está vacío
+  if (sheet.getRange(fila, 132).getValue() !== "") {
+    // Agregar salto de página antes de la décima tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la décima tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°8' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 131, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 131, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+// undecima tabla
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 142 no está vacío
+  if (sheet.getRange(fila, 142).getValue() !== "") {
+    // Agregar salto de página antes de la undécima tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la undécima tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°9' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 141, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 141, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+  // duodecima 
+// Verificar si es necesario incluir la tabla 1 y 2
+if (incluirTabla1y2) {
+  // Verificar si el valor de la columna 152 no está vacío
+  if (sheet.getRange(fila, 152).getValue() !== "") {
+    // Agregar salto de página antes de la duodécima tabla
+    contenidoHTML += '<div style="page-break-before: always;"></div>';
+
+    // Resto del código para la duodécima tabla
+    contenidoHTML += '<h1 style="font-size: 18px; text-align: left; margin-left: 45px;">Anexo A: Actividad N°10' + '</h1>';
+    contenidoHTML += '<table style="border-collapse: collapse; width: 100%; max-width: 595px; font-size: 12px; margin: 0 auto;">';
+    var valoresFila4Tabla2 = sheet.getRange(4, 151, 1, 11).getValues()[0];
+    var valoresTabla2 = sheet.getRange(fila, 151, 1, 11).getValues()[0];
+    for (var i = 1; i < valoresFila4Tabla2.length; i++) {
+      contenidoHTML += '<tr>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px; font-weight: bold;">' + valoresFila4Tabla2[i] + '</td>';
+      contenidoHTML += '<td style="max-width: 200px; text-align: justify; border: 1px solid black; padding: 8px;">';
+
+      // Verificar si el valor es una fecha antes de formatear
+      if (valoresTabla2[i] instanceof Date) {
+        contenidoHTML += formatearFecha(valoresTabla2[i]);
+      } else {
+        //Verificar si la columna es una de las columnas que contienen valores en pesos
+        contenidoHTML += valoresTabla2[i];
+      }
+
+      contenidoHTML += '</td>';
+      contenidoHTML += '</tr>';
+    }
+    contenidoHTML += '</table>';
+  }
+}
+
+ 
+    contenidoHTML += '</body></html>';
+
+    // Crear un archivo HTML temporal
+    var folder = DriveApp.getRootFolder();
+    var htmlFile = folder.createFile('temp.html', contenidoHTML, 'text/html');
+
+    // Exportar el archivo HTML como PDF
+    var pdfBlob = htmlFile.getAs('application/pdf');
+
+   
+    // Obtener la carpeta de destino en Google Drive
+    var carpetaDestino = DriveApp.getFolderById('1axNjJw4TWrVm7ry15KUszyZHjizzRiA3');
+
+    if (carpetaDestino) {
+      // Obtener el archivo PDF existente, si hay alguno
+      var archivosPDF = carpetaDestino.getFilesByName(nombreArchivo);
+
+     if (archivosPDF.hasNext()) {
+        // Si el archivo PDF existe, eliminarlo
+        var pdfFile = archivosPDF.next();
+        //pdfFile.setTrashed(true);
+        //var content = generarPDFDesdeFilaActual();
+        //pdfFile.setContent('prueba 2');
+        pdfFile.setContent(pdfBlob.getDataAsString());
+        //pdfFile.setContent(pdfBlob.getBytes());
+        
+      } else {
+        pdfFile = carpetaDestino.createFile(pdfBlob).setName(nombreArchivo);
+      }
+
+      // Guardar el nuevo PDF en la carpeta de destino
+     //carpetaDestino.createFile(pdfBlob).setName(nombreArchivo);
+
+      // Devolver la URL del nuevo archivo PDF en Google Drive
+      return carpetaDestino.getUrl() + '/' + nombreArchivo;
+    } else {
+      Logger.log('La carpeta de destino no se pudo encontrar.');
+      return null;
+    }
+  } catch (error) {
+    Logger.log('Error al generar o actualizar el PDF: ' + error);
+    return null;
+  }
+}
+
+// Función para generar o actualizar PDF desde la fila actual
+function generarPDFDesdeFilaActual(e) {
+  try {
+    if (!e) {
+      // Si no se proporciona un objeto de evento, intentar obtener información básica de la hoja activa
+      var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = spreadsheet.getActiveSheet();
+      var rowIndex = sheet.getActiveCell().getRow();
+
+      e = {
+        source: spreadsheet,
+        range: sheet.getActiveCell(),
+      };
+    }
+
+    Logger.log('Evento de edición detectado. Detalles:');
+    Logger.log('ID de la hoja de cálculo (Spreadsheet): ' + e.source.getId());
+    Logger.log('Nombre de la hoja de cálculo (Spreadsheet): ' + e.source.getName());
+    Logger.log('Nombre de la hoja (Sheet): ' + e.range.getSheet().getName());
+    Logger.log('Fila editada: ' + e.range.getRow());
+
+    var sheet = e.source.getActiveSheet();
+    var rowIndex = e.range.getRow();
+
+    // Asegurémonos de que el objeto sheet sea un objeto válido
+    if (sheet && typeof sheet.getLastColumn === 'function') {
+      // Aquí puedes agregar la lógica para generar o actualizar un PDF
+      var pdfUrl = generarPDF(sheet, rowIndex);
+
+      if (pdfUrl) {
+        Logger.log('PDF generado y guardado en: ' + pdfUrl);
+      } else {
+        Logger.log('Error al generar el PDF.');
+      }
+    } else {
+      Logger.log('Error: La hoja de cálculo no es válida.');
+    }
+  } catch (error) {
+    Logger.log('Error en generarPDFDesdeFilaActual: ' + error);
+  }
+}
+
+// Función para mostrar registros en la consola de registro
+function mostrarRegistros() {
+  var registros = Logger.getLog();
+  if (registros) {
+    Logger.log('Registros:\n' + registros);
+  } else {
+    Logger.log('No hay registros disponibles.');
+  }
+} 
